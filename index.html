@@ -5,60 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Hidroponik Caisim</title>
     
-    <script>
-    // 1. CONFIG FIREBASE (Pastikan databaseURL ada asia-southeast1)
-    const firebaseConfig = {
-        apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
-        authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
-        databaseURL: "https://monitoring-hidroponik-caisim-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "monitoring-hidroponik-caisim",
-        storageBucket: "monitoring-hidroponik-caisim.firebasestorage.app",
-        messagingSenderId: "315733041840",
-        appId: "1:315733041840:web:01efe9bfb7771d54f91175"
-    };
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref("/");
-
-    // 2. AMBIL DATA
-    dbRef.on("value", (snapshot) => {
-        const root = snapshot.val();
-        console.log("Data utuh dari Firebase:", root); // Cek di F12 (Console)
-
-        if (!root) {
-            console.log("Database masih kosong melompong!");
-            return;
-        }
-
-        // SESUAI GAMBAR DATABASE KAMU (Folder sensor & aktuator)
-        const s = root.sensor || {};
-        const a = root.aktuator || {};
-
-        // Update Angka di Kartu
-        // Kita pakai pengaman: jika data sensor.Temperature tidak ada, tampilkan 0
-        document.getElementById("txtSuhu").innerText = (s.Temperature || 0) + "°C";
-        document.getElementById("txtLembab").innerText = (s.Humidity || 0) + "%";
-        document.getElementById("txtPH").innerText = (s.pH || 0);
-        document.getElementById("txtW1").innerText = (s.Water_Level_1 || 0);
-        document.getElementById("txtW2").innerText = (s.Water_Level_2 || 0);
-
-        // Update Status Aktuator
-        const setStatus = (id, val) => {
-            const el = document.getElementById(id);
-            if (val == 1) {
-                el.innerText = "ON"; el.className = "status-badge on";
-            } else {
-                el.innerText = "OFF"; el.className = "status-badge off";
-            }
-        };
-        setStatus("statKipas", a.Kipas);
-        setStatus("statLamp", a.Lamp);
-        setStatus("statPump", a.Pump);
-
-    }, (error) => {
-        console.error("Firebase Error:", error);
-    });
-</script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
         .header { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
@@ -70,8 +20,8 @@
         .aktuator-section { background: white; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 900px; }
         .aktuator-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 15px; }
         .status-badge { padding: 10px 20px; border-radius: 30px; color: white; font-weight: bold; font-size: 14px; min-width: 100px; display: inline-block; }
-        .on { background-color: #4caf50; }
-        .off { background-color: #f44336; }
+        .on { background-color: #4caf50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.4); }
+        .off { background-color: #f44336; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
 
         .chart-container, .table-container { background: white; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 900px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -104,7 +54,7 @@
     </div>
 
     <div class="chart-container">
-        <h3>📈 Grafik Real-time</h3>
+        <h3>📈 Grafik Real-time Suhu & Kelembaban</h3>
         <canvas id="myChart"></canvas>
     </div>
 
@@ -121,6 +71,7 @@
     </div>
 
     <script>
+        // 1. KONFIGURASI FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
             authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
@@ -134,6 +85,7 @@
         firebase.initializeApp(firebaseConfig);
         const dbRef = firebase.database().ref("/");
 
+        // SETUP GRAFIK
         const ctx = document.getElementById('myChart').getContext('2d');
         const myChart = new Chart(ctx, {
             type: 'line',
@@ -143,46 +95,51 @@
                     { label: 'Suhu (°C)', data: [], borderColor: '#ff5252', tension: 0.3, fill: false },
                     { label: 'Lembab (%)', data: [], borderColor: '#448aff', tension: 0.3, fill: false }
                 ]
-            }
+            },
+            options: { responsive: true }
         });
 
+        // 2. AMBIL DATA DAN UPDATE TAMPILAN
         dbRef.on("value", (snapshot) => {
             const root = snapshot.val();
             if (!root) return;
             
             document.getElementById("connStatus").innerText = "SISTEM LIVE";
 
-            // SINKRONISASI VARIABEL (Besar/Kecil disesuaikan)
+            // SINKRONISASI FOLDER
             const s = root.sensor || {};
             const a = root.aktuator || {};
             const waktu = new Date().toLocaleTimeString();
 
-            // Mapping Data (Mencoba membaca huruf besar dan kecil)
-            const suhu = s.Temperature || s.temperature || s.suhu || 0;
-            const lembab = s.Humidity || s.humidity || s.kelembaban || 0;
+            // Mapping Data Sensor (Besar/Kecil Huruf)
+            const suhu = s.Temperature || s.temperature || 0;
+            const lembab = s.Humidity || s.humidity || 0;
             const phVal = s.pH || s.ph || 0;
-            const w1 = s.Water_Level_1 || s.water_level_1 || s.w1 || 0;
-            const w2 = s.Water_Level_2 || s.water_level_2 || s.w2 || 0;
+            const w1 = s.Water_Level_1 || s.w1 || 0;
+            const w2 = s.Water_Level_2 || s.w2 || 0;
 
-            // Update UI
+            // Update Angka di Kartu
             document.getElementById("txtSuhu").innerText = suhu + "°C";
             document.getElementById("txtLembab").innerText = lembab + "%";
             document.getElementById("txtPH").innerText = phVal;
             document.getElementById("txtW1").innerText = w1;
             document.getElementById("txtW2").innerText = w2;
 
-            // Update Aktuator (Kipas, Lamp, Pump)
+            // Update Aktuator (Sesuai nama variabel di Firebase kamu: fan, growlight, pompa)
             const setStatus = (id, val) => {
                 const el = document.getElementById(id);
-                if (val == 1 || val == "ON" || val == true) {
+                // Mendukung format Boolean (true/false) atau Angka (1/0)
+                if (val === true || val == 1 || val === "ON") {
                     el.innerText = "ON"; el.className = "status-badge on";
                 } else {
                     el.innerText = "OFF"; el.className = "status-badge off";
                 }
             };
-            setStatus("statKipas", a.Kipas || a.kipas);
-            setStatus("statLamp", a.Lamp || a.lampu || a.growlight);
-            setStatus("statPump", a.Pump || a.pompa);
+            
+            // Pemanggilan variabel sesuai gambar database kamu
+            setStatus("statKipas", a.fan);        
+            setStatus("statLamp", a.growlight);   
+            setStatus("statPump", a.pompa);       
 
             // Update Grafik
             if (myChart.data.labels.length > 10) {
@@ -202,7 +159,7 @@
             if (tableBody.rows.length > 15) tableBody.deleteRow(15);
 
         }, (error) => {
-            console.error(error);
+            console.error("Firebase Error:", error);
             document.getElementById("connStatus").innerText = "KONEKSI GAGAL";
         });
     </script>
