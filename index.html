@@ -14,10 +14,15 @@
         .header { background-color: #2e7d32; color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
         .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 250px; }
-        .card h3 { margin: 0; color: #555; font-size: 16px; }
+        .card h3 { margin: 0; color: #555; font-size: 14px; text-transform: uppercase; }
         .card .value { font-size: 32px; font-weight: bold; margin: 10px 0; color: #2e7d32; }
         
-        /* Style Grafik & Tabel */
+        /* Aktuator Style */
+        .aktuator-container { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .status-badge { padding: 8px 15px; border-radius: 20px; color: white; font-weight: bold; font-size: 12px; min-width: 80px; }
+        .on { background-color: #4caf50; }
+        .off { background-color: #f44336; }
+
         .chart-container, .table-container { 
             background: white; padding: 20px; border-radius: 15px; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: 20px auto; max-width: 900px; 
@@ -32,6 +37,7 @@
 
     <div class="header">
         <h1>🌿 MONITORING HIDROPONIK CAISIM</h1>
+        <p>Real-time Dashboard - Singapore Server</p>
     </div>
 
     <div class="container">
@@ -57,6 +63,13 @@
         </div>
     </div>
 
+    <h3 style="margin-top: 30px; color: #444;">⚙️ Kontrol Aktuator</h3>
+    <div class="aktuator-container">
+        <div>Kipas: <span id="statKipas" class="status-badge off">OFF</span></div>
+        <div>Growlight: <span id="statLamp" class="status-badge off">OFF</span></div>
+        <div>Pompa: <span id="statPump" class="status-badge off">OFF</span></div>
+    </div>
+
     <div class="chart-container">
         <h3>📈 Grafik Real-time Suhu & Kelembaban</h3>
         <canvas id="myChart"></canvas>
@@ -80,7 +93,7 @@
     </div>
 
     <script>
-        // 1. KONFIGURASI FIREBASE (Sudah diperbarui dengan data kamu)
+        // 1. KONFIGURASI FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
             authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
@@ -91,7 +104,6 @@
             appId: "1:315733041840:web:01efe9bfb7771d54f91175"
         };
 
-        // Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
         const dbRef = firebase.database().ref("/");
 
@@ -109,43 +121,60 @@
             options: { responsive: true }
         });
 
-        // 3. AMBIL DATA DARI FIREBASE SECARA REAL-TIME
+        // 3. AMBIL DATA DARI FIREBASE (FOLDER SENSOR & AKTUATOR)
         dbRef.on("value", (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return; // Mencegah error jika data kosong
+            const root = snapshot.val();
+            if (!root) return;
 
+            // Memisahkan data berdasarkan folder di Firebase kamu
+            const sensor = root.sensor || {};
+            const aktuator = root.aktuator || {};
             const waktu = new Date().toLocaleTimeString();
 
-            // Update Angka di Kartu (Pastikan nama variabel di Firebase sesuai)
-            document.getElementById("txtSuhu").innerText = (data.Temperature || data.suhu || "--") + "°C";
-            document.getElementById("txtLembab").innerText = (data.Humidity || data.kelembaban || "--") + "%";
-            document.getElementById("txtPH").innerText = (data.pH || data.ph || "--");
-            document.getElementById("txtW1").innerText = (data.Water_Level_1 || data.w1 || "--");
-            document.getElementById("txtW2").innerText = (data.Water_Level_2 || data.w2 || "--");
+            // Update Angka di Kartu
+            document.getElementById("txtSuhu").innerText = (sensor.Temperature ?? "--") + "°C";
+            document.getElementById("txtLembab").innerText = (sensor.Humidity ?? "--") + "%";
+            document.getElementById("txtPH").innerText = (sensor.pH ?? "--");
+            document.getElementById("txtW1").innerText = (sensor.Water_Level_1 ?? "--");
+            document.getElementById("txtW2").innerText = (sensor.Water_Level_2 ?? "--");
 
-            // Update Grafik (Simpan 10 titik data terakhir)
+            // Update Status Aktuator (ON/OFF)
+            const updateStatus = (id, val) => {
+                const el = document.getElementById(id);
+                if (val == 1) {
+                    el.innerText = "ON";
+                    el.className = "status-badge on";
+                } else {
+                    el.innerText = "OFF";
+                    el.className = "status-badge off";
+                }
+            };
+            updateStatus("statKipas", aktuator.Kipas);
+            updateStatus("statLamp", aktuator.Lamp);
+            updateStatus("statPump", aktuator.Pump);
+
+            // Update Grafik
             if (myChart.data.labels.length > 10) {
                 myChart.data.labels.shift();
                 myChart.data.datasets[0].data.shift();
                 myChart.data.datasets[1].data.shift();
             }
             myChart.data.labels.push(waktu);
-            myChart.data.datasets[0].data.push(data.Temperature || data.suhu);
-            myChart.data.datasets[1].data.push(data.Humidity || data.kelembaban);
+            myChart.data.datasets[0].data.push(sensor.Temperature);
+            myChart.data.datasets[1].data.push(sensor.Humidity);
             myChart.update();
 
-            // Update Tabel (Data terbaru di paling atas)
+            // Update Tabel
             const tableBody = document.getElementById("tableBody");
             const newRow = `<tr>
                 <td>${waktu}</td>
-                <td>${data.Temperature || data.suhu || "--"}</td>
-                <td>${data.Humidity || data.kelembaban || "--"}</td>
-                <td>${data.pH || data.ph || "--"}</td>
+                <td>${sensor.Temperature ?? "--"}</td>
+                <td>${sensor.Humidity ?? "--"}</td>
+                <td>${sensor.pH ?? "--"}</td>
             </tr>`;
             tableBody.innerHTML = newRow + tableBody.innerHTML;
-
-            // Batasi baris tabel (maksimal 20 baris)
             if (tableBody.rows.length > 20) { tableBody.deleteRow(20); }
+
         }, (error) => {
             console.error("Firebase Error:", error);
         });
