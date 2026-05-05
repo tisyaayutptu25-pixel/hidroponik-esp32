@@ -11,58 +11,37 @@
 
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
-        .header { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
         .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); width: 220px; transition: transform 0.3s; }
-        .card:hover { transform: translateY(-5px); }
-        .card h3 { margin: 0; color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); width: 220px; }
+        .card h3 { margin: 0; color: #666; font-size: 13px; text-transform: uppercase; }
         .card .value { font-size: 28px; font-weight: bold; margin: 10px 0; color: #2e7d32; }
         
-        /* Aktuator Style */
-        .aktuator-section { background: white; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 900px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .aktuator-section { background: white; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 900px; }
         .aktuator-container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 15px; }
         .status-badge { padding: 10px 20px; border-radius: 30px; color: white; font-weight: bold; font-size: 14px; min-width: 100px; display: inline-block; }
-        .on { background-color: #4caf50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.4); }
-        .off { background-color: #f44336; box-shadow: 0 0 10px rgba(244, 67, 54, 0.4); }
+        .on { background-color: #4caf50; }
+        .off { background-color: #f44336; }
 
-        .chart-container, .table-container { 
-            background: white; padding: 20px; border-radius: 15px; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05); margin: 20px auto; max-width: 900px; 
-        }
+        .chart-container, .table-container { background: white; padding: 20px; border-radius: 15px; margin: 20px auto; max-width: 900px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background-color: #2e7d32; color: white; padding: 12px; font-size: 14px; }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        tr:nth-child(even) { background-color: #fafafa; }
+        th { background-color: #2e7d32; color: white; padding: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h1>🌿 MONITORING HIDROPONIK CAISIM</h1>
-        <p>Lokasi: Greenhouse A1 | Status: <span id="connStatus">Menghubungkan...</span></p>
+        <p>Status Sistem: <span id="connStatus">Menghubungkan...</span></p>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h3>🌡️ Suhu Udara</h3>
-            <div class="value" id="txtSuhu">--°C</div>
-        </div>
-        <div class="card">
-            <h3>💧 Kelembaban</h3>
-            <div class="value" id="txtLembab">--%</div>
-        </div>
-        <div class="card">
-            <h3>🧪 Tingkat pH</h3>
-            <div class="value" id="txtPH">--</div>
-        </div>
-        <div class="card">
-            <h3>🚰 Air Utama</h3>
-            <div class="value" id="txtW1">--</div>
-        </div>
-        <div class="card">
-            <h3>🔄 Air Cadangan</h3>
-            <div class="value" id="txtW2">--</div>
-        </div>
+        <div class="card"><h3>🌡️ Suhu</h3><div class="value" id="txtSuhu">--°C</div></div>
+        <div class="card"><h3>💧 Lembab</h3><div class="value" id="txtLembab">--%</div></div>
+        <div class="card"><h3>🧪 pH Air</h3><div class="value" id="txtPH">--</div></div>
+        <div class="card"><h3>🚰 Water 1</h3><div class="value" id="txtW1">--</div></div>
+        <div class="card"><h3>🔄 Water 2</h3><div class="value" id="txtW2">--</div></div>
     </div>
 
     <div class="aktuator-section">
@@ -75,7 +54,7 @@
     </div>
 
     <div class="chart-container">
-        <h3>📈 Grafik Real-time (Suhu & Kelembaban)</h3>
+        <h3>📈 Grafik Real-time</h3>
         <canvas id="myChart"></canvas>
     </div>
 
@@ -84,12 +63,7 @@
         <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Waktu</th>
-                        <th>Suhu (°C)</th>
-                        <th>Lembab (%)</th>
-                        <th>pH</th>
-                    </tr>
+                    <tr><th>Waktu</th><th>Suhu (°C)</th><th>Lembab (%)</th><th>pH</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -97,7 +71,6 @@
     </div>
 
     <script>
-        // 1. CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
             authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
@@ -111,7 +84,6 @@
         firebase.initializeApp(firebaseConfig);
         const dbRef = firebase.database().ref("/");
 
-        // 2. SETUP GRAFIK
         const ctx = document.getElementById('myChart').getContext('2d');
         const myChart = new Chart(ctx, {
             type: 'line',
@@ -121,64 +93,67 @@
                     { label: 'Suhu (°C)', data: [], borderColor: '#ff5252', tension: 0.3, fill: false },
                     { label: 'Lembab (%)', data: [], borderColor: '#448aff', tension: 0.3, fill: false }
                 ]
-            },
-            options: { responsive: true, scales: { y: { beginAtZero: false } } }
+            }
         });
 
-        // 3. LISTEN DATA FIREBASE
         dbRef.on("value", (snapshot) => {
             const root = snapshot.val();
             if (!root) return;
             
             document.getElementById("connStatus").innerText = "SISTEM LIVE";
 
-            // Ambil dari sub-folder 'sensor' dan 'aktuator'
-            const sensor = root.sensor || {};
-            const aktuator = root.aktuator || {};
+            // SINKRONISASI VARIABEL (Besar/Kecil disesuaikan)
+            const s = root.sensor || {};
+            const a = root.aktuator || {};
             const waktu = new Date().toLocaleTimeString();
 
-            // Update Kartu
-            document.getElementById("txtSuhu").innerText = (sensor.Temperature ?? "--") + "°C";
-            document.getElementById("txtLembab").innerText = (sensor.Humidity ?? "--") + "%";
-            document.getElementById("txtPH").innerText = (sensor.pH ?? "--");
-            document.getElementById("txtW1").innerText = (sensor.Water_Level_1 ?? "--");
-            document.getElementById("txtW2").innerText = (sensor.Water_Level_2 ?? "--");
+            // Mapping Data (Mencoba membaca huruf besar dan kecil)
+            const suhu = s.Temperature || s.temperature || s.suhu || 0;
+            const lembab = s.Humidity || s.humidity || s.kelembaban || 0;
+            const phVal = s.pH || s.ph || 0;
+            const w1 = s.Water_Level_1 || s.water_level_1 || s.w1 || 0;
+            const w2 = s.Water_Level_2 || s.water_level_2 || s.w2 || 0;
 
-            // Update Badge Aktuator (Logika 1 = ON, 0 = OFF)
-            const setBadge = (id, val) => {
+            // Update UI
+            document.getElementById("txtSuhu").innerText = suhu + "°C";
+            document.getElementById("txtLembab").innerText = lembab + "%";
+            document.getElementById("txtPH").innerText = phVal;
+            document.getElementById("txtW1").innerText = w1;
+            document.getElementById("txtW2").innerText = w2;
+
+            // Update Aktuator (Kipas, Lamp, Pump)
+            const setStatus = (id, val) => {
                 const el = document.getElementById(id);
-                if (val == 1) { el.innerText = "ON"; el.className = "status-badge on"; }
-                else { el.innerText = "OFF"; el.className = "status-badge off"; }
+                if (val == 1 || val == "ON" || val == true) {
+                    el.innerText = "ON"; el.className = "status-badge on";
+                } else {
+                    el.innerText = "OFF"; el.className = "status-badge off";
+                }
             };
-            setBadge("statKipas", aktuator.Kipas);
-            setBadge("statLamp", aktuator.Lamp);
-            setBadge("statPump", aktuator.Pump);
+            setStatus("statKipas", a.Kipas || a.kipas);
+            setStatus("statLamp", a.Lamp || a.lampu || a.growlight);
+            setStatus("statPump", a.Pump || a.pompa);
 
-            // Update Grafik (Cegah error dengan || 0)
+            // Update Grafik
             if (myChart.data.labels.length > 10) {
                 myChart.data.labels.shift();
                 myChart.data.datasets[0].data.shift();
                 myChart.data.datasets[1].data.shift();
             }
             myChart.data.labels.push(waktu);
-            myChart.data.datasets[0].data.push(sensor.Temperature || 0);
-            myChart.data.datasets[1].data.push(sensor.Humidity || 0);
+            myChart.data.datasets[0].data.push(suhu);
+            myChart.data.datasets[1].data.push(lembab);
             myChart.update();
 
             // Update Tabel
             const tableBody = document.getElementById("tableBody");
-            const newRow = `<tr>
-                <td>${waktu}</td>
-                <td>${sensor.Temperature || "--"}</td>
-                <td>${sensor.Humidity || "--"}</td>
-                <td>${sensor.pH || "--"}</td>
-            </tr>`;
+            const newRow = `<tr><td>${waktu}</td><td>${suhu}</td><td>${lembab}</td><td>${phVal}</td></tr>`;
             tableBody.innerHTML = newRow + tableBody.innerHTML;
-            if (tableBody.rows.length > 20) { tableBody.deleteRow(20); }
+            if (tableBody.rows.length > 15) tableBody.deleteRow(15);
 
         }, (error) => {
-            document.getElementById("connStatus").innerText = "ERROR KONEKSI";
             console.error(error);
+            document.getElementById("connStatus").innerText = "KONEKSI GAGAL";
         });
     </script>
 </body>
