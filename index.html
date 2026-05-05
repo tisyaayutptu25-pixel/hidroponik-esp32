@@ -74,17 +74,24 @@
                         <th>pH</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // 1. KONFIGURASI FIREBASE (Ganti dengan milikmu jika berbeda)
+        // 1. KONFIGURASI FIREBASE (Sudah diperbarui dengan data kamu)
         const firebaseConfig = {
-            databaseURL: "https://hidroponik-esp32-e0638-default-rtdb.firebaseio.com/"
+            apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
+            authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
+            databaseURL: "https://monitoring-hidroponik-caisim-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "monitoring-hidroponik-caisim",
+            storageBucket: "monitoring-hidroponik-caisim.firebasestorage.app",
+            messagingSenderId: "315733041840",
+            appId: "1:315733041840:web:01efe9bfb7771d54f91175"
         };
+
+        // Inisialisasi Firebase
         firebase.initializeApp(firebaseConfig);
         const dbRef = firebase.database().ref("/");
 
@@ -102,17 +109,19 @@
             options: { responsive: true }
         });
 
-        // 3. AMBIL DATA DARI FIREBASE
+        // 3. AMBIL DATA DARI FIREBASE SECARA REAL-TIME
         dbRef.on("value", (snapshot) => {
             const data = snapshot.val();
+            if (!data) return; // Mencegah error jika data kosong
+
             const waktu = new Date().toLocaleTimeString();
 
-            // Update Angka di Kartu
-            document.getElementById("txtSuhu").innerText = data.Temperature + "°C";
-            document.getElementById("txtLembab").innerText = data.Humidity + "%";
-            document.getElementById("txtPH").innerText = data.pH;
-            document.getElementById("txtW1").innerText = data.Water_Level_1;
-            document.getElementById("txtW2").innerText = data.Water_Level_2;
+            // Update Angka di Kartu (Pastikan nama variabel di Firebase sesuai)
+            document.getElementById("txtSuhu").innerText = (data.Temperature || data.suhu || "--") + "°C";
+            document.getElementById("txtLembab").innerText = (data.Humidity || data.kelembaban || "--") + "%";
+            document.getElementById("txtPH").innerText = (data.pH || data.ph || "--");
+            document.getElementById("txtW1").innerText = (data.Water_Level_1 || data.w1 || "--");
+            document.getElementById("txtW2").innerText = (data.Water_Level_2 || data.w2 || "--");
 
             // Update Grafik (Simpan 10 titik data terakhir)
             if (myChart.data.labels.length > 10) {
@@ -121,22 +130,24 @@
                 myChart.data.datasets[1].data.shift();
             }
             myChart.data.labels.push(waktu);
-            myChart.data.datasets[0].data.push(data.Temperature);
-            myChart.data.datasets[1].data.push(data.Humidity);
+            myChart.data.datasets[0].data.push(data.Temperature || data.suhu);
+            myChart.data.datasets[1].data.push(data.Humidity || data.kelembaban);
             myChart.update();
 
             // Update Tabel (Data terbaru di paling atas)
             const tableBody = document.getElementById("tableBody");
             const newRow = `<tr>
                 <td>${waktu}</td>
-                <td>${data.Temperature}</td>
-                <td>${data.Humidity}</td>
-                <td>${data.pH}</td>
+                <td>${data.Temperature || data.suhu || "--"}</td>
+                <td>${data.Humidity || data.kelembaban || "--"}</td>
+                <td>${data.pH || data.ph || "--"}</td>
             </tr>`;
             tableBody.innerHTML = newRow + tableBody.innerHTML;
 
-            // Batasi baris tabel agar tidak terlalu panjang (opsional, misal 20 baris)
+            // Batasi baris tabel (maksimal 20 baris)
             if (tableBody.rows.length > 20) { tableBody.deleteRow(20); }
+        }, (error) => {
+            console.error("Firebase Error:", error);
         });
     </script>
 </body>
