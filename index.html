@@ -5,10 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Hidroponik Caisim</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script>
+    // 1. CONFIG FIREBASE (Pastikan databaseURL ada asia-southeast1)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
+        authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
+        databaseURL: "https://monitoring-hidroponik-caisim-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "monitoring-hidroponik-caisim",
+        storageBucket: "monitoring-hidroponik-caisim.firebasestorage.app",
+        messagingSenderId: "315733041840",
+        appId: "1:315733041840:web:01efe9bfb7771d54f91175"
+    };
 
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref("/");
+
+    // 2. AMBIL DATA
+    dbRef.on("value", (snapshot) => {
+        const root = snapshot.val();
+        console.log("Data utuh dari Firebase:", root); // Cek di F12 (Console)
+
+        if (!root) {
+            console.log("Database masih kosong melompong!");
+            return;
+        }
+
+        // SESUAI GAMBAR DATABASE KAMU (Folder sensor & aktuator)
+        const s = root.sensor || {};
+        const a = root.aktuator || {};
+
+        // Update Angka di Kartu
+        // Kita pakai pengaman: jika data sensor.Temperature tidak ada, tampilkan 0
+        document.getElementById("txtSuhu").innerText = (s.Temperature || 0) + "°C";
+        document.getElementById("txtLembab").innerText = (s.Humidity || 0) + "%";
+        document.getElementById("txtPH").innerText = (s.pH || 0);
+        document.getElementById("txtW1").innerText = (s.Water_Level_1 || 0);
+        document.getElementById("txtW2").innerText = (s.Water_Level_2 || 0);
+
+        // Update Status Aktuator
+        const setStatus = (id, val) => {
+            const el = document.getElementById(id);
+            if (val == 1) {
+                el.innerText = "ON"; el.className = "status-badge on";
+            } else {
+                el.innerText = "OFF"; el.className = "status-badge off";
+            }
+        };
+        setStatus("statKipas", a.Kipas);
+        setStatus("statLamp", a.Lamp);
+        setStatus("statPump", a.Pump);
+
+    }, (error) => {
+        console.error("Firebase Error:", error);
+    });
+</script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
         .header { background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); color: white; padding: 20px; border-radius: 15px; margin-bottom: 25px; }
