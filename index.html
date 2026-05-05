@@ -58,20 +58,8 @@
         <canvas id="myChart"></canvas>
     </div>
 
-    <div class="table-container">
-        <h3>📋 Log Riwayat Data</h3>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr><th>Waktu</th><th>Suhu (°C)</th><th>Lembab (%)</th><th>pH</th></tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
     <script>
-        // 1. KONFIGURASI FIREBASE
+        // CONFIG FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDWuFmn2xX61-quPkEdZYg4nlcFKfAQdO8",
             authDomain: "monitoring-hidroponik-caisim.firebaseapp.com",
@@ -95,40 +83,37 @@
                     { label: 'Suhu (°C)', data: [], borderColor: '#ff5252', tension: 0.3, fill: false },
                     { label: 'Lembab (%)', data: [], borderColor: '#448aff', tension: 0.3, fill: false }
                 ]
-            },
-            options: { responsive: true }
+            }
         });
 
-        // 2. AMBIL DATA DAN UPDATE TAMPILAN
+        // AMBIL DATA
         dbRef.on("value", (snapshot) => {
             const root = snapshot.val();
             if (!root) return;
             
             document.getElementById("connStatus").innerText = "SISTEM LIVE";
 
-            // SINKRONISASI FOLDER
             const s = root.sensor || {};
             const a = root.aktuator || {};
             const waktu = new Date().toLocaleTimeString();
 
-            // Mapping Data Sensor (Besar/Kecil Huruf)
-            const suhu = s.Temperature || s.temperature || 0;
-            const lembab = s.Humidity || s.humidity || 0;
+            // PERBAIKAN: Mencari nama variabel yang mungkin digunakan (Huruf Besar/Kecil)
+            const suhu = s.Temperature || s.temperature || s.suhu || s.temp || 0;
+            const lembab = s.Humidity || s.humidity || s.kelembaban || s.hum || 0;
             const phVal = s.pH || s.ph || 0;
-            const w1 = s.Water_Level_1 || s.w1 || 0;
-            const w2 = s.Water_Level_2 || s.w2 || 0;
+            const w1 = s.Water_Level_1 || s.water_level_1 || s.w1 || 0;
+            const w2 = s.Water_Level_2 || s.water_level_2 || s.w2 || 0;
 
-            // Update Angka di Kartu
+            // Update UI Angka
             document.getElementById("txtSuhu").innerText = suhu + "°C";
             document.getElementById("txtLembab").innerText = lembab + "%";
             document.getElementById("txtPH").innerText = phVal;
             document.getElementById("txtW1").innerText = w1;
             document.getElementById("txtW2").innerText = w2;
 
-            // Update Aktuator (Sesuai nama variabel di Firebase kamu: fan, growlight, pompa)
+            // Update Aktuator (Sesuai nama variabel fan, growlight, pompa di Firebase kamu)
             const setStatus = (id, val) => {
                 const el = document.getElementById(id);
-                // Mendukung format Boolean (true/false) atau Angka (1/0)
                 if (val === true || val == 1 || val === "ON") {
                     el.innerText = "ON"; el.className = "status-badge on";
                 } else {
@@ -136,7 +121,6 @@
                 }
             };
             
-            // Pemanggilan variabel sesuai gambar database kamu
             setStatus("statKipas", a.fan);        
             setStatus("statLamp", a.growlight);   
             setStatus("statPump", a.pompa);       
@@ -152,15 +136,6 @@
             myChart.data.datasets[1].data.push(lembab);
             myChart.update();
 
-            // Update Tabel
-            const tableBody = document.getElementById("tableBody");
-            const newRow = `<tr><td>${waktu}</td><td>${suhu}</td><td>${lembab}</td><td>${phVal}</td></tr>`;
-            tableBody.innerHTML = newRow + tableBody.innerHTML;
-            if (tableBody.rows.length > 15) tableBody.deleteRow(15);
-
-        }, (error) => {
-            console.error("Firebase Error:", error);
-            document.getElementById("connStatus").innerText = "KONEKSI GAGAL";
         });
     </script>
 </body>
